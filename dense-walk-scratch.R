@@ -35,6 +35,7 @@ library(tidyverse)
 library(osmdata)
 library(sf)
 library(ggmap)
+library(xml2)
 
 # Explore available data
 available_features()
@@ -56,6 +57,7 @@ str(q2)
 
 erko_roads <- osmdata_sf(q)
 erko_suburbs <- osmdata_sf(q2)
+erx <- osmdata_xml(q)
 
 #our background map
 erko_map <- get_map(getbb("Erskineville"), maptype = "toner-background")
@@ -135,3 +137,67 @@ ggmap(erko_map)+
           size = 2,
           shape = 21)+
   labs(x = "", y = "")
+
+temp <- erko_roads$osm_lines[street_suburb_overlap[[1]],]
+
+
+extract_road_edges_xml <- function (osm_xml) {
+  result <- list(
+    v = data.frame(
+      osmid = character(0),
+      lat_chr = character(0),
+      lon_chr = character(0),
+      lat = numeric(0),
+      lon = numeric(0)
+    ),
+    e = data.frame(
+      osmid = character(0),
+      start_osmid = character(0),
+      end_osmid = character(0),
+      name = character(0)
+    )
+  )
+  
+  if (xml_length(osm_xml) > 0) {
+    for (i in 1:xml_length(osm_xml)) {
+      nd <- xml_child(osm_xml,i)
+      
+      if (xml_name(nd) == "node") {
+        vrow <- data.frame(
+          osmid = xml_attr(nd,"id"),
+          lat_chr = xml_attr(nd,"lat"),
+          lon_chr = xml_attr(nd,"lon"),
+          lat = as.numeric(xml_attr(nd,"lat")),
+          lon = as.numeric(xml_attr(nd,"lon"))
+        )
+        result$v <- rbind(result$v,vrow)
+      } else if (xml_name(nd) == "way") {
+        osmid <- xml_attr(nd,"id")
+        nd_osmids <- character(0)
+        name <- ""
+        
+        if (xml_length(nd) > 0) {
+          for (j in 1:xml_length(nd)) {
+            if (xml_name(xml_child(nd,j)) == "nd") {
+              nd_osmids <- c(nd_osmids,xml_attr(xml_child(nd,j),"ref"))
+            } else if ((xml_name(xml_child(nd,j)) == "tag") &&
+                       (xml_attr(xml_child(nd,j),"k") == "name")) {
+              name <- xml_attr(xml_child(nd,j),"v")
+            }
+          }
+        }
+        
+        if (length(nd_osmids) > 1) {
+        result$e <- rbind(result$e,
+                          data.frame(
+                            osmid = osmid,
+                            start_osmid = nd_osmids[-length(nd_osmids)],
+                            end_osmid = nd_osmids[-1],
+                            name = name
+                          ))
+        }
+      }
+    }
+  }
+  return(result)
+}
