@@ -9,6 +9,8 @@
 #
 #  https://stackoverflow.com/questions/40576910/solving-chinese-postman-algorithm-with-eulerization
 #
+#  https://www.geeksforgeeks.org/fleurys-algorithm-for-printing-eulerian-path/
+#
 #
 # Idea - we want to find a walking route that covers all of the roads in a suburb.
 # 
@@ -225,6 +227,11 @@ create_igraph_from_roads <- function (
       directed = FALSE
     )
   
+  E(result,P=c(rbind(selected_edges$start_osmid,
+                     selected_edges$end_osmid)))$name <- selected_edges$name
+  E(result,P=c(rbind(selected_edges$start_osmid,
+                     selected_edges$end_osmid)))$osmid <- selected_edges$osmid
+  
   V(result)$lat_chr <- road_edges$v$lat_chr[match(V(result)$name,road_edges$v$osmid)]
   V(result)$lon_chr <- road_edges$v$lon_chr[match(V(result)$name,road_edges$v$osmid)]
   V(result)$lat <- road_edges$v$lat[match(V(result)$name,road_edges$v$osmid)]
@@ -233,6 +240,8 @@ create_igraph_from_roads <- function (
   V(result)$y <- V(result)$lat
   return(result)
 }
+
+
 
 
 ve_erk <- extract_road_edges_xml(erx)
