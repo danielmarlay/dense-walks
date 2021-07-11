@@ -241,8 +241,29 @@ create_igraph_from_roads <- function (
   return(result)
 }
 
+connect_odd_vertices <- function (g) {
+  odd_vertices <- V(g)[(degree(g,V(g)) %% 2) != 0]
+  
+  while (length(odd_vertices) > 0) {
+    dists <- distances(g,odd_vertices,odd_vertices)
+    diag(dists) <- max(dists,na.rm=TRUE) + 1.0
+    min_dist_idxs <- which(dists == min(dists,na.rm=TRUE))
+    row_idx <- row(dists)[min_dist_idxs[1]]
+    col_idx <- col(dists)[min_dist_idxs[1]]
+    g <- add_edges(g,c(odd_vertices[row_idx],odd_vertices[col_idx]))
+    odd_vertices <- V(g)[(degree(g,V(g)) %% 2) != 0]
+  }  
+  
+  return(g)
+}
 
+eulerian_cycle_vertices <- function (g) {
+  
+  
+}
 
 
 ve_erk <- extract_road_edges_xml(erx)
 erk_igraph <- create_igraph_from_roads(ve_erk,road_ids = erko_road_osmids)
+table(degree(erk_igraph))
+con_erk_igraph <- connect_odd_vertices(erk_igraph)
