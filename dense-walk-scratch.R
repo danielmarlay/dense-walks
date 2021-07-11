@@ -250,6 +250,7 @@ connect_odd_vertices <- function (g) {
     min_dist_idxs <- which(dists == min(dists,na.rm=TRUE))
     row_idx <- row(dists)[min_dist_idxs[1]]
     col_idx <- col(dists)[min_dist_idxs[1]]
+    # TODO: Add the sequence of existing edges on the shortest path, not just an edge between start and end
     g <- add_edges(g,c(odd_vertices[row_idx],odd_vertices[col_idx]))
     odd_vertices <- V(g)[(degree(g,V(g)) %% 2) != 0]
   }  
@@ -258,8 +259,25 @@ connect_odd_vertices <- function (g) {
 }
 
 eulerian_cycle_vertices <- function (g) {
+  comps <- decompose.graph(g)
+  sizes <- sapply(comps,gsize)
+  subg <- comps[[which(sizes == max(sizes))]]
+  workg <- subg
   
+  path.V <- (V(workg))[1]$name
+  while (gsize(workg) > 0) {
+    end.vertex.name <- path.V[length(path.V)]
+    possible.edges <- incident(workg,V(workg)[end.vertex.name])
+    length.w.edge.removed <- sapply(possible.edges,
+                                    function (e) {length(decompose.graph(delete_edges(workg,e)))})
+    selected.idx <- (which(length.w.edge.removed == min(length.w.edge.removed)))[1]
+    selected.ends <- ends(workg,possible.edges[selected.idx])
+    next.end <- selected.ends[which(selected.ends != end.vertex.name)]
+    path.V <- c(path.V,next.end)
+    workg <- delete_edges(workg,possible.edges[selected.idx])
+  }
   
+  return(path.V)
 }
 
 
@@ -267,3 +285,6 @@ ve_erk <- extract_road_edges_xml(erx)
 erk_igraph <- create_igraph_from_roads(ve_erk,road_ids = erko_road_osmids)
 table(degree(erk_igraph))
 con_erk_igraph <- connect_odd_vertices(erk_igraph)
+table(degree(con_erk_igraph))
+
+eulerian_cycle_vertices(con_erk_igraph)
