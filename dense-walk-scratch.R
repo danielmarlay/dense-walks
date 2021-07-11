@@ -2,6 +2,26 @@
 #
 # References used:
 #  https://dominicroye.github.io/en/2018/accessing-openstreetmap-data-with-r/
+#
+#  https://www.datacamp.com/community/tutorials/networkx-python-graph-tutorial
+#
+#
+# Idea - we want to find a walking route that covers all of the roads in a suburb.
+# 
+# Based on the link - https://www.datacamp.com/community/tutorials/networkx-python-graph-tutorial
+# We've learnt that this is the "Chinese Postman Problem" or the "Route Inspection
+# Problem". The classic way to solve this is:
+#  - Identify vertices that have an odd number of edges
+#  - Duplicate existing edges in the graph to join pairs of vertices with odd
+#    numbers of edges so that they now have an even number of edges. As the
+#    total number of vertex-edge connections is an even number (each edge has
+#    two vertex-edge connections), we will be able to get rid of all vertices
+#    with an odd number of edges this way. Note that once we have done this, we
+#    know that the total distance will be the sum of all the edge distances, so
+#    the problem of finding the shortest route that covers all edges is about
+#    how to best select the pairs of odd vertices to connect. Should be O(n^2)
+#    to search through this space, so not too challenging as long as there aren't
+#    too many odd numbered vertices.
 
 
 #install the osmdata, sf, tidyverse and ggmap package
