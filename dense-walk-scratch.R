@@ -280,6 +280,16 @@ eulerian_cycle_vertices <- function (g) {
   return(path.V)
 }
 
+get_ec_road_names <- function (
+  g,
+  path.vertex.names
+) {
+  return(
+    E(g,P=c(rbind(path.vertex.names[-length(path.vertex.names)],
+                  path.vertex.names[-1])))$name
+  )
+}
+
 
 ve_erk <- extract_road_edges_xml(erx)
 erk_igraph <- create_igraph_from_roads(ve_erk,road_ids = erko_road_osmids)
@@ -287,4 +297,6 @@ table(degree(erk_igraph))
 con_erk_igraph <- connect_odd_vertices(erk_igraph)
 table(degree(con_erk_igraph))
 
-eulerian_cycle_vertices(con_erk_igraph)
+ec_vertex_names <- eulerian_cycle_vertices(con_erk_igraph)
+get_ec_road_names(con_erk_igraph,ec_vertex_names)
+
