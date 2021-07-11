@@ -5,6 +5,10 @@
 #
 #  https://www.datacamp.com/community/tutorials/networkx-python-graph-tutorial
 #
+#  https://freakonometrics.hypotheses.org/53694
+#
+#  https://stackoverflow.com/questions/40576910/solving-chinese-postman-algorithm-with-eulerization
+#
 #
 # Idea - we want to find a walking route that covers all of the roads in a suburb.
 # 
@@ -29,6 +33,7 @@ if(!require("osmdata")) install.packages("osmdata")
 if(!require("tidyverse")) install.packages("tidyverse")
 if(!require("sf")) install.packages("sf")
 if(!require("ggmap")) install.packages("ggmap")
+if(!require("igraph")) install.packages("igraph")
 
 #load packages
 library(tidyverse)
@@ -36,6 +41,7 @@ library(osmdata)
 library(sf)
 library(ggmap)
 library(xml2)
+library(igraph)
 
 # Explore available data
 available_features()
@@ -119,6 +125,10 @@ ggmap(erko_map)+
 
 street_suburb_overlap <- st_contains(x = erko_suburbs$osm_multipolygons %>% filter(name == "Erskineville"),
                                      y = erko_roads$osm_lines)
+erko_road_osmids <- erko_roads$osm_lines$osm_id[street_suburb_overlap[[1]]]
+
+erko_road_names <- erko_roads$osm_lines$name[street_suburb_overlap[[1]]]
+
 
 
 
@@ -193,7 +203,7 @@ extract_road_edges_xml <- function (osm_xml) {
                             osmid = osmid,
                             start_osmid = nd_osmids[-length(nd_osmids)],
                             end_osmid = nd_osmids[-1],
-                            name = name
+                            name = paste(name," - segment ",1:(length(nd_osmids)-1))
                           ))
         }
       }
@@ -201,3 +211,29 @@ extract_road_edges_xml <- function (osm_xml) {
   }
   return(result)
 }
+
+create_igraph_from_roads <- function (
+  road_edges,
+  road_ids = unique(road_edges$e$osmid)
+) {
+  selected_edges <- road_edges$e[road_edges$e$osmid %in% road_ids,]
+  
+  result <-
+    make_graph(
+      edges = c(rbind(selected_edges$start_osmid,
+                      selected_edges$end_osmid)),
+      directed = FALSE
+    )
+  
+  V(result)$lat_chr <- road_edges$v$lat_chr[match(V(result)$name,road_edges$v$osmid)]
+  V(result)$lon_chr <- road_edges$v$lon_chr[match(V(result)$name,road_edges$v$osmid)]
+  V(result)$lat <- road_edges$v$lat[match(V(result)$name,road_edges$v$osmid)]
+  V(result)$lon <- road_edges$v$lon[match(V(result)$name,road_edges$v$osmid)]
+  V(result)$x <- V(result)$lon
+  V(result)$y <- V(result)$lat
+  return(result)
+}
+
+
+ve_erk <- extract_road_edges_xml(erx)
+erk_igraph <- create_igraph_from_roads(ve_erk,road_ids = erko_road_osmids)
