@@ -238,6 +238,14 @@ create_igraph_from_roads <- function (
   V(result)$lon <- road_edges$v$lon[match(V(result)$name,road_edges$v$osmid)]
   V(result)$x <- V(result)$lon
   V(result)$y <- V(result)$lat
+  
+  endids <- ends(result,E(result))
+  froms <- V(result)[endids[,1]]
+  tos <- V(result)[endids[,2]]
+  
+  E(result)$weight <- sqrt((cos(((tos$lat+froms$lat)/2)*pi/180)*(tos$lon-froms$lon))^2 +
+                             (tos$lat-froms$lat)^2)
+  
   return(result)
 }
 
@@ -251,7 +259,16 @@ connect_odd_vertices <- function (g) {
     row_idx <- row(dists)[min_dist_idxs[1]]
     col_idx <- col(dists)[min_dist_idxs[1]]
     # TODO: Add the sequence of existing edges on the shortest path, not just an edge between start and end
-    g <- add_edges(g,c(odd_vertices[row_idx],odd_vertices[col_idx]))
+
+    print(paste("Joining vertex",row_idx,"to",col_idx))
+    
+    path.v <- shortest_paths(g,odd_vertices[row_idx],odd_vertices[col_idx])$vpath[[1]]
+    froms <- V(g)[path.v[-1]]
+    tos <- V(g)[path.v[-length(path.v)]]
+    weights <- sqrt((cos(((tos$lat+froms$lat)/2)*pi/180)*(tos$lon-froms$lon))^2 +
+                               (tos$lat-froms$lat)^2)
+    
+    g <- add_edges(g,c(rbind(path.v[-length(path.v)],path.v[-1])),weight=weights)
     odd_vertices <- V(g)[(degree(g,V(g)) %% 2) != 0]
   }  
   
@@ -290,6 +307,15 @@ get_ec_road_names <- function (
   )
 }
 
+get_ec_osmid_sequence <- function (
+  g,
+  path.vertex.names
+) {
+  es <- E(g,P=c(rbind(path.vertex.names[-length(path.vertex.names)],
+                      path.vertex.names[-1])))
+  return(es$osmid)
+}
+
 
 ve_erk <- extract_road_edges_xml(erx)
 erk_igraph <- create_igraph_from_roads(ve_erk,road_ids = erko_road_osmids)
@@ -299,4 +325,6 @@ table(degree(con_erk_igraph))
 
 ec_vertex_names <- eulerian_cycle_vertices(con_erk_igraph)
 get_ec_road_names(con_erk_igraph,ec_vertex_names)
+
+temp <- get_ec_osmid_sequence(con_erk_igraph,ec_vertex_names)
 
