@@ -111,7 +111,7 @@ ggmap(erko_map)+
           inherit.aes = FALSE,
           colour = "#FF0000",
           fill = "#FF0000",
-          alpha = 0.5,
+          alpha = 0.2,
           size = 1)+
   labs(x = "", y = "")
 
@@ -131,7 +131,12 @@ erko_road_osmids <- erko_roads$osm_lines$osm_id[street_suburb_overlap[[1]]]
 
 erko_road_names <- erko_roads$osm_lines$name[street_suburb_overlap[[1]]]
 
+table(erko_roads$osm_lines$highway)
 
+street_suburb_overlap_inscope <- which(erko_roads$osm_lines$highway %in% c("primary","primary_link","residential",
+                                                                           "secondary","secondary_link","service",
+                                                                           "tertiary","trunk","unclassified"))
+street_suburb_overlap_inscope <- street_suburb_overlap_inscope[street_suburb_overlap_inscope %in% street_suburb_overlap[[1]]]
 
 
 ggmap(erko_map)+
@@ -139,7 +144,7 @@ ggmap(erko_map)+
           inherit.aes = FALSE,
           colour = "#FF0000",
           fill = "#FF0000",
-          alpha = 0.5,
+          alpha = 0.2,
           size = 1)+
   geom_sf(data = erko_roads$osm_lines[street_suburb_overlap[[1]],],
           inherit.aes = FALSE,
@@ -149,6 +154,30 @@ ggmap(erko_map)+
           size = 2,
           shape = 21)+
   labs(x = "", y = "")
+
+
+ggmap(erko_map)+
+  geom_sf(data = erko_suburbs$osm_multipolygons[erko_suburbs$osm_multipolygons$name == "Erskineville"],
+          inherit.aes = FALSE,
+          colour = "#FF0000",
+          fill = "#FF0000",
+          alpha = 0.2,
+          size = 1)+
+  geom_sf(data = erko_roads$osm_lines[street_suburb_overlap[[1]],],
+          inherit.aes = FALSE,
+          colour = "#238443",
+          fill = "#004529",
+          alpha = 0.2,
+          size = 2,
+          shape = 21)+
+  geom_sf(data = erko_roads$osm_lines[street_suburb_overlap_inscope,],
+          inherit.aes = FALSE,
+          colour = "#0000FF",
+          fill = "#0000FF",
+          alpha = 0.7,
+          size = 2,
+          shape = 21)+  labs(x = "", y = "")
+
 
 temp <- erko_roads$osm_lines[street_suburb_overlap[[1]],]
 
