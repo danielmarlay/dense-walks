@@ -128,6 +128,11 @@ ggmap(erko_map)+
 street_suburb_overlap <- st_contains(x = erko_suburbs$osm_multipolygons %>% filter(name == "Erskineville"),
                                      y = erko_roads$osm_lines)
 
+node_suburb_overlap <- st_contains(x = erko_suburbs$osm_multipolygons %>% filter(name == "Erskineville"),
+                                   y = erko_roads$osm_points)
+
+
+
 
 table(erko_roads$osm_lines$highway)
 
@@ -158,7 +163,15 @@ ggmap(erko_map)+
           fill = "#0000FF",
           alpha = 0.7,
           size = 2,
-          shape = 21)+  labs(x = "", y = "")
+          shape = 21)+
+  geom_sf(data = erko_roads$osm_points[node_suburb_overlap[[1]],],
+          inherit.aes = FALSE,
+          colour = "#00FF00",
+          fill = "#00FF00",
+          alpha = 0.7,
+          size = 2,
+          shape = 21)+
+  labs(x = "", y = "")
 
 
 temp <- erko_roads$osm_lines[street_suburb_overlap_inscope,]
